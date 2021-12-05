@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * @Description: RPC 请求消息体
+ * RPC request entity
+ *
  * @Author: Hypocrite30
  * @Date: 2021/11/17 21:53
  */
@@ -17,10 +18,16 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Builder
 public class RpcRequest implements Serializable {
-    private static final long serialVersionUID = -948427851347433410L;
+    private static final long serialVersionUID = -6911686882540610293L;
     private String interfaceName;
     private String methodName;
     private Object[] parameters;
     private Class<?>[] paramTypes;
     private String requestId;
+    private String version;
+    private String group;
+
+    public String getRpcServiceName() {
+        return this.getInterfaceName() + this.getGroup() + this.getVersion();
+    }
 }
