@@ -5,24 +5,27 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @Description: 单例工厂
+ * Singleton factory
+ *
  * @Author: Hypocrite30
  * @Date: 2021/11/20 20:07
  */
 public class SingletonFactory {
+
     private static final Map<String, Object> SINGLETON_MAP = new ConcurrentHashMap<>();
 
     private SingletonFactory() {
     }
 
     /**
-     * 获取单例
      * 不存在，则反射获取无参构造器，new 实例，存入单例 Map，返回结果
-     * 返回结果都需要 cast 强转
+     *
+     * @param c Class type
+     * @return 返回结果都需要 cast 强转
      */
     public static <T> T getInstance(Class<T> c) {
         if (c == null) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Class type is null");
         }
         String key = c.toString();
         if (SINGLETON_MAP.containsKey(key)) {
