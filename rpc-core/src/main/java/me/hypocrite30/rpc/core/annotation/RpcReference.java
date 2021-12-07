@@ -3,16 +3,16 @@ package me.hypocrite30.rpc.core.annotation;
 import java.lang.annotation.*;
 
 /**
- * RpcService annotation, which mark the impl class
+ * RpcReference annotation, which autowire impl class
  *
  * @Author: Hypocrite30
- * @Date: 2021/11/17 22:06
+ * @Date: 2021/12/5 22:25
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
+@Target({ElementType.FIELD})
 @Inherited
-public @interface RpcService {
+public @interface RpcReference {
     /**
      * Service version
      */
