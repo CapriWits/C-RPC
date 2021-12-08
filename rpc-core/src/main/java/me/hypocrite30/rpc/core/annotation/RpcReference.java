@@ -19,7 +19,7 @@ public @interface RpcReference {
     String version() default "";
 
     /**
-     * Service group
+     * Service group, distinguish different impl
      */
     String group() default "";
 }
