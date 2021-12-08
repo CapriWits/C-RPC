@@ -1,0 +1,2 @@
+socket=me.hypocrite30.rpc.core.remote.transport.soket.SocketRpcClient
+netty=me.hypocrite30.rpc.core.remote.transport.netty.client.NettyRpcClient
