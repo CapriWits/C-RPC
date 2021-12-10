@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 /**
- * @Description: 线程池工具类
  * @Author: Hypocrite30
  * @Date: 2021/11/17 22:33
  */
@@ -16,6 +15,7 @@ public class ThreadPoolUtils {
 
     /**
      * 给线程池命名前缀，区分线程池
+     *
      * @Key: ThreadNamePrefix
      * @Value: ThreadPool
      */
@@ -30,6 +30,7 @@ public class ThreadPoolUtils {
 
     /**
      * 命名前缀对应线程池若存在，直接返回。否则创建新的映射关系记录，并返回新线程池
+     *
      * @param threadPoolConfig 线程池配置类
      * @param threadNamePrefix 线程池命名前缀
      * @param daemon           是否为守护线程
@@ -59,6 +60,7 @@ public class ThreadPoolUtils {
 
     /**
      * 如果有自定义命名线程前缀，自定义创建 ThreadFactory，否则使用 defaultThreadFactory
+     *
      * @param threadNamePrefix 线程命名前缀，用于区分线程
      * @param daemon           是否为守护线程
      * @return ThreadFactory
@@ -66,6 +68,7 @@ public class ThreadPoolUtils {
     public static ThreadFactory createThreadFactory(String threadNamePrefix, Boolean daemon) {
         if (threadNamePrefix != null) {
             if (daemon != null) { // daemon 要判空，用包装类型
+                // com.google.common.util.concurrent.ThreadFactoryBuilder
                 return new ThreadFactoryBuilder().setNameFormat(threadNamePrefix + "-%d").setDaemon(daemon).build();
             } else {
                 return new ThreadFactoryBuilder().setNameFormat(threadNamePrefix + "-%d").build();
