@@ -14,7 +14,8 @@ import lombok.ToString;
 public enum RpcErrorEnum {
     SERVICE_CALL_FAILED("Service call failed"),
     NOT_FOUND_SERVICE("Not found service"),
-    REQUEST_NOT_MATCH_RESPONSE("Request not match response");
+    REQUEST_NOT_MATCH_RESPONSE("Request not match response"),
+    FAIL_TO_GET_PROPERTIES("Fail to get properties");
 
     private final String errorMsg;
 }

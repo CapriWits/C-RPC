@@ -25,10 +25,10 @@ public class ProtostuffSerializerTest {
                 .version("version1")
                 .build();
 
-        ProtostuffSerializer kryoSerializer = new ProtostuffSerializer();
+        ProtostuffSerializer protostuffSerializer = new ProtostuffSerializer();
 
-        byte[] bytes = kryoSerializer.serialize(src);
-        RpcRequest desc = kryoSerializer.deserialize(bytes, RpcRequest.class);
+        byte[] bytes = protostuffSerializer.serialize(src);
+        RpcRequest desc = protostuffSerializer.deserialize(bytes, RpcRequest.class);
 
         assertEquals(src.getGroup(), desc.getGroup());
         assertEquals(src.getVersion(), desc.getVersion());

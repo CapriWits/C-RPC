@@ -3,7 +3,8 @@ package me.hypocrite30.rpc.common.utils.concurrent.threadpool;
 import org.junit.jupiter.api.Test;
 
 /**
- * @Description: Test for ThreadPoolUtils
+ * Test for ThreadPoolUtils
+ *
  * @Author: Hypocrite30
  * @Date: 2021/11/18 22:15
  */
