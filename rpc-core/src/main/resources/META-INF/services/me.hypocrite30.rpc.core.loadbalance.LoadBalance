@@ -1,0 +1,2 @@
+random=me.hypocrite30.rpc.core.loadbalance.impl.RandomLoadBalance
+roundrobin=me.hypocrite30.rpc.core.loadbalance.impl.RoundRobinLoadBalance

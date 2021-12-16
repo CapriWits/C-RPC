@@ -33,7 +33,7 @@
         <!-- etcd -->
         <dependency>
             <groupId>io.etcd</groupId>
-            <artifactId>jetcd-core</artifactId>
+            <artifactId>jetcd-all</artifactId>
             <version>${jetcd.version}</version>
         </dependency>
         <!-- protostuff -->
