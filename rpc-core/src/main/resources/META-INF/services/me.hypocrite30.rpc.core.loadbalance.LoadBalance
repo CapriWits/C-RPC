@@ -1,2 +1,4 @@
 random=me.hypocrite30.rpc.core.loadbalance.impl.RandomLoadBalance
 roundrobin=me.hypocrite30.rpc.core.loadbalance.impl.RoundRobinLoadBalance
+weightedroundrobin=me.hypocrite30.rpc.core.loadbalance.impl.WeightedRoundRobinLoadBalance
+consistenthash=me.hypocrite30.rpc.core.loadbalance.impl.ConsistentHashLoadBalance

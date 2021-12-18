@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Load balance by weighted round robin
+ * Load balance by round robin
  *
  * @Author: Hypocrite30
  * @Date: 2021/12/16 21:42
