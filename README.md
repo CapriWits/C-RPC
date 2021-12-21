@@ -4,7 +4,7 @@
 
 - [ ] ProtostuffSerializer 解决**并发问题**
 
-- [ ] ServiceProvider 使用 **SPI** 
+- [x] ServiceProvider 使用 **SPI** 
 
 - [ ] ServiceDiscovery based on **etcd**
 
@@ -14,6 +14,8 @@
 
 - [ ] Custom codec
 
-- [ ] Add LoadBalance
+- [x] Add LoadBalance
 
-- [ ] Add Compress
+- [x] Add Compress
+
+- [x] Bean To Json 解决 etcd k-v 一对一映射问题 based on Gson
