@@ -71,6 +71,13 @@ public class EtcdUtils {
         return etcdClient.getKVClient();
     }
 
+    /**
+     * registry method
+     *
+     * @param etcdClient        etcd java client
+     * @param servicePath       e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoServiceGroup1Version1
+     * @param inetSocketAddress e.g. /127.0.0.1:9996
+     */
     public static void addServiceAddressToEtcd(KV etcdClient, String servicePath, InetSocketAddress inetSocketAddress) {
         // firstly check cache
         if (checkIfHasBeenCached(servicePath, inetSocketAddress)) {
@@ -100,7 +107,17 @@ public class EtcdUtils {
         }
     }
 
+    /**
+     * Put service path to etcd
+     *
+     * @param servicePath              e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoServiceGroup1Version1
+     * @param inetSocketAddress        e.g. /127.0.0.1:9996
+     * @param etcdClient               etcd java client
+     * @param rpcRegisteredServiceInfo registered service information including IP list
+     * @return true if put action successfully
+     */
     public static boolean putAddressByServicePath(String servicePath, InetSocketAddress inetSocketAddress, KV etcdClient, RpcRegisteredServiceInfo rpcRegisteredServiceInfo) throws ExecutionException, InterruptedException, TimeoutException {
+        // add service address to registered service IP list firstly
         rpcRegisteredServiceInfo.getIP().add(inetSocketAddress.toString());
         // Java Bean to Json by Gson
         String jsonServerInfo = GsonSerializer.JavaBean2Json(rpcRegisteredServiceInfo);
@@ -109,6 +126,13 @@ public class EtcdUtils {
         return response != null;
     }
 
+    /**
+     * Get registered service information by service path
+     *
+     * @param servicePath e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoServiceGroup1Version1
+     * @param etcdClient  etcd java client
+     * @return registered service information object
+     */
     public static RpcRegisteredServiceInfo getAddressByServicePath(String servicePath, KV etcdClient) throws ExecutionException, InterruptedException, TimeoutException, RpcException {
         if (SERVICE_ADDRESS_MAP.containsKey(servicePath)) {
             return SERVICE_ADDRESS_MAP.get(servicePath);
@@ -123,7 +147,7 @@ public class EtcdUtils {
         try {
             GsonSerializer.isJsonFormat(jsonServerInfo);
         } catch (JsonSyntaxException e) {
-            // etcd has registered service but not json format, can not return null, it will initialize RpcRegisteredServiceInfo and overwrite registered service
+            // etcd has registered service but not json format, can not return null, it will initialize RpcRegisteredServiceInfo and overwrite registered service later
             throw new RpcException(RpcErrorEnum.JSON_FORMAT_ERROR);
         }
         // Json to Java bean by Gson
@@ -133,6 +157,13 @@ public class EtcdUtils {
         return rpcRegisteredServiceInfo;
     }
 
+    /**
+     * Check if service address has been cached
+     *
+     * @param servicePath       e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoServiceGroup1Version1
+     * @param inetSocketAddress service address ready to be registered
+     * @return true if service address has been cached
+     */
     private static boolean checkIfHasBeenCached(String servicePath, InetSocketAddress inetSocketAddress) {
         if (SERVICE_ADDRESS_MAP.containsKey(servicePath)) {
             return SERVICE_ADDRESS_MAP.get(servicePath).getIP().contains(inetSocketAddress.toString());
@@ -140,10 +171,23 @@ public class EtcdUtils {
         return false;
     }
 
+    /**
+     * check if service address has been registered
+     *
+     * @param rpcRegisteredServiceInfo registered service information
+     * @param inetSocketAddress        service address ready to be registered
+     * @return true if service address has been registered
+     */
     private static boolean checkIfHasBeenRegistered(RpcRegisteredServiceInfo rpcRegisteredServiceInfo, InetSocketAddress inetSocketAddress) {
         return rpcRegisteredServiceInfo.getIP().contains(inetSocketAddress.toString());
     }
 
+    /**
+     * Transfer [java.lang.String] to [io.etcd.jetcd.ByteSequence]
+     *
+     * @param val java.lang.String
+     * @return io.etcd.jetcd.ByteSequence
+     */
     public static ByteSequence bytesOf(String val) {
         return ByteSequence.from(val, UTF_8);
     }
