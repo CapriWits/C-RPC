@@ -16,11 +16,13 @@
             <groupId>me.hypocrite30</groupId>
             <artifactId>rpc-service-api</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>me.hypocrite30</groupId>
             <artifactId>rpc-core</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

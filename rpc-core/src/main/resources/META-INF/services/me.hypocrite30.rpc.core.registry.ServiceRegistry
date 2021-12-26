@@ -1,0 +1,1 @@
+etcd=me.hypocrite30.rpc.core.registry.etcd.EtcdServiceRegistryImpl
