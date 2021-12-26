@@ -8,17 +8,16 @@ import io.etcd.jetcd.KeyValue;
 import io.etcd.jetcd.kv.GetResponse;
 import io.etcd.jetcd.kv.PutResponse;
 import lombok.extern.slf4j.Slf4j;
+import me.hypocrite30.rpc.common.enums.RpcConfigEnum;
 import me.hypocrite30.rpc.common.enums.RpcErrorEnum;
 import me.hypocrite30.rpc.common.exception.RpcException;
+import me.hypocrite30.rpc.common.utils.PropertiesUtils;
 import me.hypocrite30.rpc.common.utils.code.GsonSerializer;
 import me.hypocrite30.rpc.core.registry.RpcRegisteredServiceInfo;
 import org.springframework.util.CollectionUtils;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -59,8 +58,11 @@ public class EtcdUtils {
                 // double checked
                 if (etcdClient == null) {
                     // get etcd endpoints from resources if config is existing
+                    // TODO: Check using properties to get RPC registry center
                     // Properties properties = PropertiesUtils.getProperties(RpcConfigEnum.RPC_CONFIG_PATH.getValue());
-                    // String etcdAddress = properties != null && properties.getProperty(RpcConfigEnum.ETCD_ENDPOINTS.getValue()) != null ? properties.getProperty(RpcConfigEnum.ETCD_ENDPOINTS.getValue()) : DEFAULT_ENDPOINTS;
+                    // String etcdAddress = properties != null && properties.getProperty(RpcConfigEnum.ETCD_ENDPOINTS.getValue()) != null ?
+                    //         properties.getProperty(RpcConfigEnum.ETCD_ENDPOINTS.getValue()) :
+                    //         DEFAULT_ENDPOINTS;
                     String etcdAddress = "http://192.168.248.128:2379,http://192.168.248.128:2380,http://192.168.248.128:2381";
                     etcdClient = Client.builder().endpoints(etcdAddress.split(",")).build();
                 }
@@ -94,7 +96,7 @@ public class EtcdUtils {
                 }
             }
         } catch (InterruptedException | ExecutionException | TimeoutException | RpcException e) {
-            log.error("Registry occur some problems", e);
+            throw new RpcException("Registry occur some problems", e);
         }
     }
 

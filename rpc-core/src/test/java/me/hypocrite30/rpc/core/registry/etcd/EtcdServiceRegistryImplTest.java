@@ -1,13 +1,18 @@
 package me.hypocrite30.rpc.core.registry.etcd;
 
+import me.hypocrite30.rpc.common.extension.ExtensionLoader;
 import me.hypocrite30.rpc.core.EchoService;
 import me.hypocrite30.rpc.core.EchoServiceImpl;
 import me.hypocrite30.rpc.core.EchoServiceImpl2;
 import me.hypocrite30.rpc.core.config.RpcServiceConfig;
+import me.hypocrite30.rpc.core.registry.ServiceDiscovery;
 import me.hypocrite30.rpc.core.registry.ServiceRegistry;
+import me.hypocrite30.rpc.core.remote.dto.RpcRequest;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import java.net.InetSocketAddress;
+import java.util.UUID;
 
 /**
  * @Author: Hypocrite30
@@ -24,6 +29,15 @@ public class EtcdServiceRegistryImplTest {
         etcdServiceRegistry.registerService(rpcServiceConfig.getRpcServiceName(), inetSocketAddress);
         // register for the same service again
         etcdServiceRegistry.registerService(rpcServiceConfig.getRpcServiceName(), inetSocketAddress);
+        // discovery service
+        ServiceDiscovery serviceDiscovery = ExtensionLoader.getExtensionLoader(ServiceDiscovery.class).getExtension("etcd");
+        RpcRequest rpcRequest = RpcRequest.builder()
+                .interfaceName(rpcServiceConfig.getServiceName())
+                .requestId(UUID.randomUUID().toString())
+                .group(rpcServiceConfig.getGroup())
+                .version(rpcServiceConfig.getVersion()).build();
+        InetSocketAddress serviceAddress = serviceDiscovery.findService(rpcRequest);
+        Assertions.assertEquals(inetSocketAddress.toString(), serviceAddress.toString());
     }
 
     @Test
