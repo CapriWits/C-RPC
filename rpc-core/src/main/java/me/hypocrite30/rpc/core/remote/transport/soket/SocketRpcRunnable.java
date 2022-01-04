@@ -12,7 +12,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /**
- * @Description: 与 client 建立连接后，执行业务
+ * connect with client and execute business
+ *
  * @Author: Hypocrite30
  * @Date: 2021/11/20 20:00
  */
@@ -29,15 +30,14 @@ public class SocketRpcRunnable implements Runnable {
     @Override
     public void run() {
         log.info("SocketRpcServer handler massage by thread: [{}]", Thread.currentThread().getName());
-        try {
-            ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
-            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+        try (ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+             ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream())) {
             RpcRequest rpcRequest = (RpcRequest) inputStream.readObject();
-            Object res = rpcRequestHandler.handle(rpcRequest);
-            outputStream.writeObject(RpcResponse.success(res, rpcRequest.getRequestId()));
+            Object result = rpcRequestHandler.handle(rpcRequest);
+            outputStream.writeObject(RpcResponse.success(result, rpcRequest.getRequestId()));
             outputStream.flush();
         } catch (IOException | ClassNotFoundException e) {
-            log.error("IOException: [{}]", e);
+            log.error("Socket runnable occur IOException: ", e);
         }
     }
 }

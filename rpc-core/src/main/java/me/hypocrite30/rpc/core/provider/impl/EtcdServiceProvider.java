@@ -4,13 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import me.hypocrite30.rpc.common.enums.RpcErrorEnum;
 import me.hypocrite30.rpc.common.exception.RpcException;
 import me.hypocrite30.rpc.common.extension.ExtensionLoader;
+import me.hypocrite30.rpc.common.utils.net.NetUtils;
 import me.hypocrite30.rpc.core.config.RpcServiceConfig;
 import me.hypocrite30.rpc.core.provider.ServiceProvider;
 import me.hypocrite30.rpc.core.registry.ServiceRegistry;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,13 +42,9 @@ public class EtcdServiceProvider implements ServiceProvider {
 
     @Override
     public void publishService(RpcServiceConfig rpcServiceConfig) {
-        try {
-            String hostAddress = InetAddress.getLocalHost().getHostAddress();
-            addService(rpcServiceConfig);
-            serviceRegistry.registerService(rpcServiceConfig.getRpcServiceName(), new InetSocketAddress(hostAddress, PORT));
-        } catch (UnknownHostException e) {
-            log.error("Error to getLocalHost", e);
-        }
+        String hostAddress = NetUtils.getLocalHostExactAddress().toString();
+        addService(rpcServiceConfig);
+        serviceRegistry.registerService(rpcServiceConfig.getRpcServiceName(), new InetSocketAddress(hostAddress, PORT));
     }
 
     @Override

@@ -1,19 +1,24 @@
 package me.hypocrite30.rpc.core.remote.transport.soket;
 
 import lombok.extern.slf4j.Slf4j;
+import me.hypocrite30.rpc.common.factory.SingletonFactory;
 import me.hypocrite30.rpc.common.utils.concurrent.threadpool.ThreadPoolUtils;
+import me.hypocrite30.rpc.common.utils.net.NetUtils;
+import me.hypocrite30.rpc.core.config.RpcServiceConfig;
+import me.hypocrite30.rpc.core.provider.ServiceProvider;
+import me.hypocrite30.rpc.core.provider.impl.EtcdServiceProvider;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 
-import static me.hypocrite30.rpc.core.remote.transport.netty.server.NettyServer.PORT;
+import static me.hypocrite30.rpc.core.remote.transport.netty.server.NettyRpcServer.PORT;
 
 /**
- * @Description: 原生 JDK 实现
+ * RpcServer based on JDK Socket
+ *
  * @Author: Hypocrite30
  * @Date: 2021/11/17 22:26
  */
@@ -21,25 +26,33 @@ import static me.hypocrite30.rpc.core.remote.transport.netty.server.NettyServer.
 public class SocketRpcServer {
 
     private final ExecutorService threadPool;
+    private final ServiceProvider serviceProvider;
 
     public SocketRpcServer() {
-        threadPool = ThreadPoolUtils.createThreadPoolIfAbsent("socket-server-pool");
+        threadPool = ThreadPoolUtils.createThreadPoolIfAbsent("socket-rpc-server-pool");
+        serviceProvider = SingletonFactory.getInstance(EtcdServiceProvider.class);
+    }
+
+    public void registerService(RpcServiceConfig rpcServiceConfig) {
+        serviceProvider.publishService(rpcServiceConfig);
     }
 
     public void start() {
-        try {
-            ServerSocket serverSocket = new ServerSocket();
-            String hostAddress = InetAddress.getLocalHost().getHostAddress();
-            serverSocket.bind(new InetSocketAddress(hostAddress, PORT));
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            String hostAddress = NetUtils.getLocalHostExactAddress().toString();
+            // remove prefix '/' of IP
+            String ip = hostAddress.split("/")[1];
+            serverSocket.bind(new InetSocketAddress(ip, PORT));
             Socket socket;
-            // 监听消息
+            // Listen for messages
             while ((socket = serverSocket.accept()) != null) {
                 log.info("Client has connected [{}]", socket.getInetAddress());
                 threadPool.execute(new SocketRpcRunnable(socket));
             }
-            threadPool.shutdown();
         } catch (IOException e) {
-            log.error("IOException: [{}]", e);
+            log.error("IOException: ", e);
+        } finally {
+            threadPool.shutdown();
         }
     }
 }

@@ -22,7 +22,7 @@ public class RpcServiceConfig {
     private String version = "";
 
     public String getRpcServiceName() {
-        return this.getServiceName() + this.getGroup() + this.getVersion();
+        return this.getServiceName() + "#" + this.getGroup() + "#" + this.getVersion();
     }
 
     public String getServiceName() {
