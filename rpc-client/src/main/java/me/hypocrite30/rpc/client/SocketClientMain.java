@@ -14,10 +14,10 @@ import me.hypocrite30.rpc.core.remote.transport.soket.SocketRpcClient;
 public class SocketClientMain {
     public static void main(String[] args) {
         RequestTransporter socketRpcClient = new SocketRpcClient();
-        RpcServiceConfig serviceConfig = new RpcServiceConfig();
+        RpcServiceConfig serviceConfig = RpcServiceConfig.builder().group("Group1").version("Version1").build();
         RpcClientProxy proxy = new RpcClientProxy(socketRpcClient, serviceConfig);
         EchoService echoService = proxy.getProxy(EchoService.class);
-        String res = echoService.echo(new Entity("message11", "description22"));
-        System.out.println(res);
+        String result = echoService.echo(new Entity("message11", "description22"));
+        System.out.println(result);
     }
 }

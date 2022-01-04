@@ -1,10 +1,10 @@
 package me.hypocrite30.rpc.core.proxy;
 
 import lombok.extern.slf4j.Slf4j;
-import me.hypocrite30.rpc.common.exception.RpcException;
-import me.hypocrite30.rpc.core.config.RpcServiceConfig;
 import me.hypocrite30.rpc.common.enums.RpcErrorEnum;
 import me.hypocrite30.rpc.common.enums.RpcResponseCodeEnum;
+import me.hypocrite30.rpc.common.exception.RpcException;
+import me.hypocrite30.rpc.core.config.RpcServiceConfig;
 import me.hypocrite30.rpc.core.remote.dto.RpcRequest;
 import me.hypocrite30.rpc.core.remote.dto.RpcResponse;
 import me.hypocrite30.rpc.core.remote.transport.RequestTransporter;
@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * Client dynamic proxy class
- * Proxy class implements InvocationHandler so that when Proxy.newProxyInstance will invoke following [invoke] method
+ * The Proxy class implements InvocationHandler so that when Proxy.newProxyInstance will invoke following [invoke] method
  *
  * @Author: Hypocrite30
  * @Date: 2021/12/8 20:19

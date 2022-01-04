@@ -9,7 +9,6 @@ import me.hypocrite30.rpc.core.provider.ServiceProvider;
 import me.hypocrite30.rpc.core.provider.impl.EtcdServiceProvider;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -39,14 +38,13 @@ public class SocketRpcServer {
 
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket()) {
-            String hostAddress = NetUtils.getLocalHostExactAddress().toString();
-            // remove prefix '/' of IP
-            String ip = hostAddress.split("/")[1];
-            serverSocket.bind(new InetSocketAddress(ip, PORT));
+            String host = NetUtils.getLocalHostExactAddress().toString();
+            serverSocket.bind(NetUtils.newInetSocketAddress(host + ":" + PORT));
+            // log.info("Server socket has bind IP: [{}:{}]", ip, PORT);
             Socket socket;
             // Listen for messages
             while ((socket = serverSocket.accept()) != null) {
-                log.info("Client has connected [{}]", socket.getInetAddress());
+                log.info("Client [{}:{}] has connected", socket.getInetAddress(), socket.getPort());
                 threadPool.execute(new SocketRpcRunnable(socket));
             }
         } catch (IOException e) {

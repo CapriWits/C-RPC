@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.hypocrite30.rpc.common.enums.RpcErrorEnum;
 import me.hypocrite30.rpc.common.exception.RpcException;
 import me.hypocrite30.rpc.common.extension.ExtensionLoader;
+import me.hypocrite30.rpc.common.utils.net.NetUtils;
 import me.hypocrite30.rpc.core.loadbalance.LoadBalance;
 import me.hypocrite30.rpc.core.registry.RpcRegisteredServiceInfo;
 import me.hypocrite30.rpc.core.registry.ServiceDiscovery;
@@ -45,10 +46,7 @@ public class EtcdServiceDiscoveryImpl implements ServiceDiscovery {
             }
             String selectServerAddress = loadBalance.selectServerAddress(serviceAddressList, rpcRequest);
             log.info("Find service successfully, the address: [{}]", selectServerAddress);
-            String[] socketAddress = selectServerAddress.split(":");
-            String hostName = socketAddress[0];
-            int port = Integer.parseInt(socketAddress[1]);
-            return new InetSocketAddress(hostName, port);
+            return NetUtils.newInetSocketAddress(selectServerAddress);
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             throw new RpcException("Service discovery occur some problems", e);
         }

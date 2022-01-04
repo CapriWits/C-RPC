@@ -58,12 +58,10 @@ public class EtcdUtils {
                 // double checked
                 if (etcdClient == null) {
                     // get etcd endpoints from resources if config is existing
-                    // TODO: Check using properties to get RPC registry center
-                    // Properties properties = PropertiesUtils.getProperties(RpcConfigEnum.RPC_CONFIG_PATH.getValue());
-                    // String etcdAddress = properties != null && properties.getProperty(RpcConfigEnum.ETCD_ENDPOINTS.getValue()) != null ?
-                    //         properties.getProperty(RpcConfigEnum.ETCD_ENDPOINTS.getValue()) :
-                    //         DEFAULT_ENDPOINTS;
-                    String etcdAddress = "http://192.168.248.128:2379,http://192.168.248.128:2380,http://192.168.248.128:2381";
+                    Properties properties = PropertiesUtils.getProperties(RpcConfigEnum.RPC_CONFIG_PATH.getValue());
+                    String etcdAddress = properties != null && properties.getProperty(RpcConfigEnum.ETCD_ENDPOINTS.getValue()) != null ?
+                            properties.getProperty(RpcConfigEnum.ETCD_ENDPOINTS.getValue()) :
+                            DEFAULT_ENDPOINTS;
                     etcdClient = Client.builder().endpoints(etcdAddress.split(",")).build();
                 }
             }
@@ -95,13 +93,15 @@ public class EtcdUtils {
                 log.info("The node has been exsisted. Node: [{}]", servicePath);
             } else {
                 // put service address if it has not been registered
-                if (putAddressByServicePath(servicePath, inetSocketAddress, etcdClient, rpcRegisteredServiceInfo)) {
+                // add service address to registered service IP list firstly
+                rpcRegisteredServiceInfo.getIP().add(inetSocketAddress.toString());
+                if (putAddressByServicePath(servicePath, etcdClient, rpcRegisteredServiceInfo)) {
                     log.info("The node has been created successfully. Node: [{}]", servicePath);
-                    REGISTERED_SERVICE.add(servicePath);
                 } else {
                     log.error("Fail to create node. Node: [{}]", servicePath);
                 }
             }
+            REGISTERED_SERVICE.add(servicePath);
         } catch (InterruptedException | ExecutionException | TimeoutException | RpcException e) {
             throw new RpcException("Registry occur some problems", e);
         }
@@ -111,14 +111,11 @@ public class EtcdUtils {
      * Put service path to etcd
      *
      * @param servicePath              e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoServiceGroup1Version1
-     * @param inetSocketAddress        e.g. /127.0.0.1:9996
      * @param etcdClient               etcd java client
      * @param rpcRegisteredServiceInfo registered service information including IP list
      * @return true if put action successfully
      */
-    public static boolean putAddressByServicePath(String servicePath, InetSocketAddress inetSocketAddress, KV etcdClient, RpcRegisteredServiceInfo rpcRegisteredServiceInfo) throws ExecutionException, InterruptedException, TimeoutException {
-        // add service address to registered service IP list firstly
-        rpcRegisteredServiceInfo.getIP().add(inetSocketAddress.toString());
+    public static boolean putAddressByServicePath(String servicePath, KV etcdClient, RpcRegisteredServiceInfo rpcRegisteredServiceInfo) throws ExecutionException, InterruptedException, TimeoutException {
         // Java Bean to Json by Gson
         String jsonServerInfo = GsonSerializer.JavaBean2Json(rpcRegisteredServiceInfo);
         CompletableFuture<PutResponse> completableFuture = etcdClient.put(bytesOf(servicePath), bytesOf(jsonServerInfo));
@@ -156,6 +153,31 @@ public class EtcdUtils {
         SERVICE_ADDRESS_MAP.put(servicePath, rpcRegisteredServiceInfo);
         return rpcRegisteredServiceInfo;
     }
+
+    /**
+     * unregister service manually
+     *
+     * @param inetSocketAddress server socket address
+     * @param etcdClient        etcd java client
+     */
+    public static void unregister(InetSocketAddress inetSocketAddress, KV etcdClient) {
+        REGISTERED_SERVICE.stream().parallel().forEach(path -> {
+            try {
+                RpcRegisteredServiceInfo serviceInfo = getAddressByServicePath(path, etcdClient);
+                Iterator<String> iterator = serviceInfo.getIP().iterator();
+                while (iterator.hasNext()) {
+                    if (iterator.next().equals(inetSocketAddress.toString())) {
+                        iterator.remove();
+                    }
+                }
+                putAddressByServicePath(path, etcdClient, serviceInfo);
+            } catch (ExecutionException | InterruptedException | TimeoutException e) {
+                throw new RpcException("unregister occur some problem", e);
+            }
+            log.info("unregister all service successfully [{}]", REGISTERED_SERVICE);
+        });
+    }
+
 
     /**
      * Check if service address has been cached

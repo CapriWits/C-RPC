@@ -18,4 +18,8 @@ public class RpcException extends RuntimeException {
     public RpcException(RpcErrorEnum errorEnum) {
         super(errorEnum.getErrorMsg());
     }
+
+    public RpcException(String message) {
+        super(message);
+    }
 }

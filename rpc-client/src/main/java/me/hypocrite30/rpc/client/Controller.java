@@ -12,16 +12,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class Controller {
 
+    // to scan @RpcService for registering
     @RpcReference(version = "v1", group = "g1")
     private EchoService echoService;
 
-    public void echo() throws InterruptedException {
-        String hello = this.echoService.echo(new Entity("message11", "description22"));
-        // VM Option: -ea
-        assert "Hello description is 222".equals(hello);
-        Thread.sleep(10000);
-        for (int i = 0; i < 10; i++) {
+    // register rpc service manually
+    @RpcReference(version = "v2", group = "g2")
+    private EchoService echoService2;
+
+    public void echo() {
+        for (int i = 0; i < 5; i++) {
             System.out.println(echoService.echo(new Entity("message11", "description22")));
+            System.out.println(echoService2.echo(new Entity("nessage22", "description22")));
         }
     }
 }

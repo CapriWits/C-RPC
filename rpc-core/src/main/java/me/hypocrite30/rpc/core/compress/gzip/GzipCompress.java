@@ -1,6 +1,5 @@
 package me.hypocrite30.rpc.core.compress.gzip;
 
-import lombok.extern.slf4j.Slf4j;
 import me.hypocrite30.rpc.common.exception.RpcException;
 import me.hypocrite30.rpc.core.compress.Compress;
 
@@ -23,16 +22,15 @@ public class GzipCompress implements Compress {
         if (bytes == null) {
             throw new NullPointerException("bytes buffer is null");
         }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            GZIPOutputStream gzip = new GZIPOutputStream(out);
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             GZIPOutputStream gzip = new GZIPOutputStream(out)) {
             gzip.write(bytes);
             gzip.flush();
             gzip.finish();
+            return out.toByteArray();
         } catch (IOException e) {
             throw new RpcException("gzip compress error", e);
         }
-        return out.toByteArray();
     }
 
     @Override
@@ -40,17 +38,16 @@ public class GzipCompress implements Compress {
         if (bytes == null) {
             throw new NullPointerException("bytes buffer is null");
         }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            GZIPInputStream gunzip = new GZIPInputStream(new ByteArrayInputStream(bytes));
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             GZIPInputStream gunzip = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
             byte[] buffer = new byte[BUFFER_SIZE];
             int n;
             while ((n = gunzip.read(buffer)) > -1) {
                 out.write(buffer, 0, n);
             }
+            return out.toByteArray();
         } catch (IOException e) {
             throw new RpcException("gzip decompress error", e);
         }
-        return out.toByteArray();
     }
 }

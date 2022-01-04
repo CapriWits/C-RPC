@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  * @Date: 2021/12/5 22:28
  */
 @Slf4j
-public class CustomScannerRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoaderAware {
+public class RpcServiceScannerRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoaderAware {
 
     public static final String BEAN_BASE_PACKAGE = "me.hypocrite30";
     private static final String BASE_PACKAGE_ATTRIBUTE_NAME = "basePackage";

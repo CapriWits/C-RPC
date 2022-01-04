@@ -1,6 +1,6 @@
 package me.hypocrite30.rpc.core.annotation;
 
-import me.hypocrite30.rpc.core.spring.CustomScannerRegistrar;
+import me.hypocrite30.rpc.core.spring.RpcServiceScannerRegistrar;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.*;
@@ -14,7 +14,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import(CustomScannerRegistrar.class) // import registrar to achieve custom scanner
+@Import(RpcServiceScannerRegistrar.class) // import registrar to achieve custom scanner
 public @interface RpcScan {
 
     String[] basePackage() default {};

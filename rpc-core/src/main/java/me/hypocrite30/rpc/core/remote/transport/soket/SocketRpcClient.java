@@ -33,10 +33,10 @@ public class SocketRpcClient implements RequestTransporter {
 
     @Override
     public Object sendRpcRequest(RpcRequest rpcRequest) {
-        InetSocketAddress socketAddress = serviceDiscovery.findService(rpcRequest);
+        InetSocketAddress serverSocketAddress = serviceDiscovery.findService(rpcRequest);
         try {
             Socket socket = new Socket();
-            socket.connect(socketAddress);
+            socket.connect(serverSocketAddress);
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(rpcRequest);
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());

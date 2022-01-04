@@ -9,7 +9,9 @@ import me.hypocrite30.rpc.core.config.RpcServiceConfig;
 import me.hypocrite30.rpc.core.provider.ServiceProvider;
 import me.hypocrite30.rpc.core.registry.ServiceRegistry;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,9 +44,9 @@ public class EtcdServiceProvider implements ServiceProvider {
 
     @Override
     public void publishService(RpcServiceConfig rpcServiceConfig) {
-        String hostAddress = NetUtils.getLocalHostExactAddress().toString();
+        String host = NetUtils.getLocalHostExactAddress().toString();
         addService(rpcServiceConfig);
-        serviceRegistry.registerService(rpcServiceConfig.getRpcServiceName(), new InetSocketAddress(hostAddress, PORT));
+        serviceRegistry.registerService(rpcServiceConfig.getRpcServiceName(), new InetSocketAddress(host, PORT));
     }
 
     @Override

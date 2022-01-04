@@ -10,6 +10,7 @@ import me.hypocrite30.rpc.core.serialize.Serializer;
 import me.hypocrite30.rpc.core.serialize.protostuff.ProtostuffSerializer;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,5 +39,8 @@ public class GzipCompressTest {
         byte[] decompressRpcRequestBytes = gzipCompress.decompress(compressRpcRequestBytes);
         System.out.println("decompressRpcRequestBytes.length = " + decompressRpcRequestBytes.length);
         assertEquals(rpcRequestBytes.length, decompressRpcRequestBytes.length);
+        System.out.println(new String(rpcRequestBytes));
+        System.out.println(new String(decompressRpcRequestBytes));
+        System.out.println(Arrays.equals(rpcRequestBytes, decompressRpcRequestBytes));
     }
 }
