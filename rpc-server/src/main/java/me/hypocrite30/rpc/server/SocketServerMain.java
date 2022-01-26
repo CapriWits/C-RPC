@@ -1,7 +1,7 @@
 package me.hypocrite30.rpc.server;
 
 import me.hypocrite30.rpc.core.config.RpcServiceConfig;
-import me.hypocrite30.rpc.core.remote.transport.soket.SocketRpcServer;
+import me.hypocrite30.rpc.core.remote.transport.socket.SocketRpcServer;
 import me.hypocrite30.rpc.server.impl.EchoServiceImpl;
 
 /**

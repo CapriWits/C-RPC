@@ -1,4 +1,4 @@
-package me.hypocrite30.rpc.core.remote.transport.soket;
+package me.hypocrite30.rpc.core.remote.transport.socket;
 
 import lombok.extern.slf4j.Slf4j;
 import me.hypocrite30.rpc.common.factory.SingletonFactory;

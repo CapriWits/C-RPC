@@ -9,7 +9,7 @@ import me.hypocrite30.rpc.core.remote.dto.RpcRequest;
 import me.hypocrite30.rpc.core.remote.dto.RpcResponse;
 import me.hypocrite30.rpc.core.remote.transport.RequestTransporter;
 import me.hypocrite30.rpc.core.remote.transport.netty.client.NettyRpcClient;
-import me.hypocrite30.rpc.core.remote.transport.soket.SocketRpcClient;
+import me.hypocrite30.rpc.core.remote.transport.socket.SocketRpcClient;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

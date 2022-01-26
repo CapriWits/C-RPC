@@ -5,7 +5,7 @@ import me.hypocrite30.rpc.api.Entity;
 import me.hypocrite30.rpc.core.config.RpcServiceConfig;
 import me.hypocrite30.rpc.core.proxy.RpcClientProxy;
 import me.hypocrite30.rpc.core.remote.transport.RequestTransporter;
-import me.hypocrite30.rpc.core.remote.transport.soket.SocketRpcClient;
+import me.hypocrite30.rpc.core.remote.transport.socket.SocketRpcClient;
 
 /**
  * @Author: Hypocrite30
