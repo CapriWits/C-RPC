@@ -9,7 +9,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
  */
 @RpcScan(basePackage = {"me.hypocrite30"})
 public class NettyClientMain {
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(NettyClientMain.class);
         Controller controller = ((Controller) applicationContext.getBean("controller"));
         controller.echo();

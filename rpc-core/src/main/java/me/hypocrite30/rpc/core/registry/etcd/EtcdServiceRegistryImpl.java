@@ -1,6 +1,6 @@
 package me.hypocrite30.rpc.core.registry.etcd;
 
-import io.etcd.jetcd.KV;
+import io.etcd.jetcd.Client;
 import lombok.extern.slf4j.Slf4j;
 import me.hypocrite30.rpc.core.registry.ServiceRegistry;
 import me.hypocrite30.rpc.core.registry.etcd.util.EtcdUtils;
@@ -17,8 +17,8 @@ import java.net.InetSocketAddress;
 public class EtcdServiceRegistryImpl implements ServiceRegistry {
     @Override
     public void registerService(String rpcServiceName, InetSocketAddress inetSocketAddress) {
-        String servicePath = EtcdUtils.ETCD_REGISTRY_ROOT + "/" + rpcServiceName;
-        KV etcdClient = EtcdUtils.getEtcdClient();
+        String servicePath = EtcdUtils.getServicePath(rpcServiceName);
+        Client etcdClient = EtcdUtils.getEtcdClient();
         EtcdUtils.addServiceAddressToEtcd(etcdClient, servicePath, inetSocketAddress);
     }
 }

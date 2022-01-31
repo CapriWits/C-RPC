@@ -1,12 +1,12 @@
 package me.hypocrite30.rpc.core.registry.etcd.util;
 
 import com.google.gson.JsonSyntaxException;
-import io.etcd.jetcd.ByteSequence;
-import io.etcd.jetcd.Client;
-import io.etcd.jetcd.KV;
-import io.etcd.jetcd.KeyValue;
+import io.etcd.jetcd.*;
 import io.etcd.jetcd.kv.GetResponse;
-import io.etcd.jetcd.kv.PutResponse;
+import io.etcd.jetcd.lease.LeaseKeepAliveResponse;
+import io.etcd.jetcd.options.GetOption;
+import io.etcd.jetcd.options.PutOption;
+import io.etcd.jetcd.shaded.io.grpc.stub.CallStreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import me.hypocrite30.rpc.common.enums.RpcConfigEnum;
 import me.hypocrite30.rpc.common.enums.RpcErrorEnum;
@@ -14,13 +14,15 @@ import me.hypocrite30.rpc.common.exception.RpcException;
 import me.hypocrite30.rpc.common.utils.PropertiesUtils;
 import me.hypocrite30.rpc.common.utils.code.GsonSerializer;
 import me.hypocrite30.rpc.core.registry.RpcRegisteredServiceInfo;
+import me.hypocrite30.rpc.core.remote.transport.netty.codec.RpcCodecConstants;
 import org.springframework.util.CollectionUtils;
 
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.*;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Jetcd - a java client for etcd
@@ -36,13 +38,13 @@ public class EtcdUtils {
     public static final long TIME_OUT = 5000L;
     public static final int DEFAULT_LIST_SIZE = 16;
     /**
-     * @key: servicePath e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoServiceGroup1Version1
+     * @key: rpc server host
      * @value: rpc registered service information
      */
     public static final Map<String, RpcRegisteredServiceInfo> SERVICE_ADDRESS_MAP = new ConcurrentHashMap<>();
-    public static final Set<String> REGISTERED_SERVICE = ConcurrentHashMap.newKeySet();
     private static Client etcdClient;
     private static Object lock = new Object();
+    private static long leaseId = 0L;
 
     private EtcdUtils() {
     }
@@ -52,7 +54,7 @@ public class EtcdUtils {
      *
      * @return Etcd Client
      */
-    public static KV getEtcdClient() {
+    public static Client getEtcdClient() {
         if (etcdClient == null) {
             synchronized (lock) {
                 // double checked
@@ -66,129 +68,152 @@ public class EtcdUtils {
                 }
             }
         }
-        return etcdClient.getKVClient();
+        return etcdClient;
     }
 
     /**
-     * registry method
+     * registry method. Etcd store structure: K-V [server ip:host - service list]
      *
      * @param etcdClient        etcd java client
-     * @param servicePath       e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoServiceGroup1Version1
+     * @param servicePath       e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoService#Group1#Version1
      * @param inetSocketAddress e.g. /127.0.0.1:9996
      */
-    public static void addServiceAddressToEtcd(KV etcdClient, String servicePath, InetSocketAddress inetSocketAddress) {
+    public static void addServiceAddressToEtcd(Client etcdClient, String servicePath, InetSocketAddress inetSocketAddress) {
         // firstly check cache
         if (checkIfHasBeenCached(servicePath, inetSocketAddress)) {
             log.info("The node has been exsisted. Node: [{}]", servicePath);
             return;
         }
         try {
-            // query to get registered service address
-            RpcRegisteredServiceInfo rpcRegisteredServiceInfo = getAddressByServicePath(servicePath, etcdClient);
+            // query to get registered service
+            RpcRegisteredServiceInfo rpcRegisteredServiceInfo = getServicePathByAddress(inetSocketAddress, etcdClient);
             if (rpcRegisteredServiceInfo == null) {
                 rpcRegisteredServiceInfo = new RpcRegisteredServiceInfo();
-                rpcRegisteredServiceInfo.setIP(new ArrayList<>(DEFAULT_LIST_SIZE));
+                rpcRegisteredServiceInfo.setServicePath(new ArrayList<>(DEFAULT_LIST_SIZE));
             }
-            if (checkIfHasBeenRegistered(rpcRegisteredServiceInfo, inetSocketAddress)) {
+            if (checkIfHasBeenRegistered(rpcRegisteredServiceInfo, servicePath)) {
                 log.info("The node has been exsisted. Node: [{}]", servicePath);
             } else {
-                // put service address if it has not been registered
-                // add service address to registered service IP list firstly
-                rpcRegisteredServiceInfo.getIP().add(inetSocketAddress.toString());
-                if (putAddressByServicePath(servicePath, etcdClient, rpcRegisteredServiceInfo)) {
-                    log.info("The node has been created successfully. Node: [{}]", servicePath);
-                } else {
-                    log.error("Fail to create node. Node: [{}]", servicePath);
-                }
+                // put service if it has not been registered
+                // add service to registered service IP list firstly
+                rpcRegisteredServiceInfo.getServicePath().add(servicePath);
+                putWithLease(inetSocketAddress.toString(), rpcRegisteredServiceInfo, etcdClient);
+                log.info("The node has been created successfully. Node: [{} - {}]", inetSocketAddress, servicePath);
             }
-            REGISTERED_SERVICE.add(servicePath);
         } catch (InterruptedException | ExecutionException | TimeoutException | RpcException e) {
             throw new RpcException("Registry occur some problems", e);
         }
     }
 
     /**
-     * Put service path to etcd
-     *
-     * @param servicePath              e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoServiceGroup1Version1
-     * @param etcdClient               etcd java client
-     * @param rpcRegisteredServiceInfo registered service information including IP list
-     * @return true if put action successfully
-     */
-    public static boolean putAddressByServicePath(String servicePath, KV etcdClient, RpcRegisteredServiceInfo rpcRegisteredServiceInfo) throws ExecutionException, InterruptedException, TimeoutException {
-        // Java Bean to Json by Gson
-        String jsonServerInfo = GsonSerializer.JavaBean2Json(rpcRegisteredServiceInfo);
-        CompletableFuture<PutResponse> completableFuture = etcdClient.put(bytesOf(servicePath), bytesOf(jsonServerInfo));
-        PutResponse response = completableFuture.get(TIME_OUT, TimeUnit.MILLISECONDS);
-        return response != null;
-    }
-
-    /**
      * Get registered service information by service path
      *
-     * @param servicePath e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoServiceGroup1Version1
-     * @param etcdClient  etcd java client
+     * @param inetSocketAddress e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoService#Group1#Version1
+     * @param etcdClient        etcd java client
      * @return registered service information object
      */
-    public static RpcRegisteredServiceInfo getAddressByServicePath(String servicePath, KV etcdClient) throws ExecutionException, InterruptedException, TimeoutException, RpcException {
-        if (SERVICE_ADDRESS_MAP.containsKey(servicePath)) {
-            return SERVICE_ADDRESS_MAP.get(servicePath);
+    public static RpcRegisteredServiceInfo getServicePathByAddress(InetSocketAddress inetSocketAddress, Client etcdClient) throws ExecutionException, InterruptedException, TimeoutException, RpcException {
+        if (SERVICE_ADDRESS_MAP.containsKey(inetSocketAddress.toString())) {
+            return SERVICE_ADDRESS_MAP.get(inetSocketAddress.toString());
         }
-        CompletableFuture<GetResponse> completableFuture = etcdClient.get(bytesOf(servicePath));
+        CompletableFuture<GetResponse> completableFuture = etcdClient.getKVClient().get(bytesOf(inetSocketAddress.toString()));
         GetResponse response = completableFuture.get(TIME_OUT, TimeUnit.MILLISECONDS);
         List<KeyValue> kvs = response.getKvs();
         if (CollectionUtils.isEmpty(kvs)) {
             return null;
         }
-        String jsonServerInfo = new String(kvs.get(0).getValue().getBytes());
+        String jsonServiceInfo = new String(kvs.get(0).getValue().getBytes());
         try {
-            GsonSerializer.isJsonFormat(jsonServerInfo);
+            GsonSerializer.isJsonFormat(jsonServiceInfo);
         } catch (JsonSyntaxException e) {
             // etcd has registered service but not json format, can not return null, it will initialize RpcRegisteredServiceInfo and overwrite registered service later
             throw new RpcException(RpcErrorEnum.JSON_FORMAT_ERROR);
         }
-        // Json to Java bean by Gson
-        RpcRegisteredServiceInfo rpcRegisteredServiceInfo = GsonSerializer.Json2JavaBean(jsonServerInfo, RpcRegisteredServiceInfo.class);
+        // Json string transform to Java bean by Gson
+        RpcRegisteredServiceInfo rpcRegisteredServiceInfo = GsonSerializer.Json2JavaBean(jsonServiceInfo, RpcRegisteredServiceInfo.class);
         // update query result with storing the map
-        SERVICE_ADDRESS_MAP.put(servicePath, rpcRegisteredServiceInfo);
+        SERVICE_ADDRESS_MAP.put(inetSocketAddress.toString(), rpcRegisteredServiceInfo);
         return rpcRegisteredServiceInfo;
     }
 
     /**
-     * unregister service manually
+     * put K-V to etcd with lease and keep lease alive forever
      *
-     * @param inetSocketAddress server socket address
-     * @param etcdClient        etcd java client
+     * @param host                     rpc service ip:port
+     * @param rpcRegisteredServiceInfo service information
      */
-    public static void unregister(InetSocketAddress inetSocketAddress, KV etcdClient) {
-        REGISTERED_SERVICE.stream().parallel().forEach(path -> {
-            try {
-                RpcRegisteredServiceInfo serviceInfo = getAddressByServicePath(path, etcdClient);
-                Iterator<String> iterator = serviceInfo.getIP().iterator();
-                while (iterator.hasNext()) {
-                    if (iterator.next().equals(inetSocketAddress.toString())) {
-                        iterator.remove();
-                    }
-                }
-                putAddressByServicePath(path, etcdClient, serviceInfo);
-            } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                throw new RpcException("unregister occur some problem", e);
-            }
-            log.info("unregister all service successfully [{}]", REGISTERED_SERVICE);
+    public static void putWithLease(String host, RpcRegisteredServiceInfo rpcRegisteredServiceInfo, Client etcdClient) {
+        String jsonServiceInfo = GsonSerializer.JavaBean2Json(rpcRegisteredServiceInfo);
+        Lease leaseClient = etcdClient.getLeaseClient();
+        if (leaseId != 0L) {
+            log.info("The old leaseId: [{}] has deleted", leaseId);
+            leaseClient.revoke(leaseId);
+        }
+        leaseClient.grant(30).thenAccept(result -> {
+            leaseId = result.getID();
+            log.info("key: [{}] has offered a lease successfully, lease ID: [{}]", host, Long.toHexString(leaseId));
+            PutOption putOption = PutOption.newBuilder().withLeaseId(leaseId).build();
+            etcdClient.getKVClient()
+                    .put(bytesOf(host), bytesOf(jsonServiceInfo), putOption)
+                    // keep the given lease alive forever
+                    .thenAccept(putResponse -> leaseClient.keepAlive(leaseId, new CallStreamObserver<LeaseKeepAliveResponse>() {
+                        @Override
+                        public boolean isReady() {
+                            return false;
+                        }
+
+                        @Override
+                        public void setOnReadyHandler(Runnable runnable) {}
+
+                        @Override
+                        public void disableAutoInboundFlowControl() {}
+
+                        @Override
+                        public void request(int i) {}
+
+                        @Override
+                        public void setMessageCompression(boolean b) {}
+
+                        @Override
+                        public void onNext(LeaseKeepAliveResponse keepAliveResponse) {
+                            log.info("[{}] lease keep alive successfully, TTL: [{}]", Long.toHexString(leaseId), keepAliveResponse.getTTL());
+                        }
+
+                        @Override
+                        public void onError(Throwable throwable) {}
+
+                        @Override
+                        public void onCompleted() {
+                            log.info("onCompleted");
+                        }
+                    }));
         });
     }
 
+    /**
+     * get all etcd key and value with prefix
+     *
+     * @param prefix     all key common prefix
+     * @param etcdClient etcd java client
+     * @return map for host - services list
+     */
+    public static List<KeyValue> getAllEtcdKVs(String prefix, Client etcdClient) throws ExecutionException, InterruptedException, TimeoutException {
+        KV client = etcdClient.getKVClient();
+        GetOption getOption = GetOption.newBuilder().withPrefix(bytesOf(prefix)).build();
+        GetResponse response = client.get(bytesOf(prefix), getOption).get(TIME_OUT, TimeUnit.MILLISECONDS);
+        return response.getKvs();
+    }
 
     /**
      * Check if service address has been cached
      *
-     * @param servicePath       e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoServiceGroup1Version1
+     * @param servicePath       e.g. /etcd-registry/me.hypocrite30.rpc.core.EchoService#Group1#Version1
      * @param inetSocketAddress service address ready to be registered
      * @return true if service address has been cached
      */
     private static boolean checkIfHasBeenCached(String servicePath, InetSocketAddress inetSocketAddress) {
-        if (SERVICE_ADDRESS_MAP.containsKey(servicePath)) {
-            return SERVICE_ADDRESS_MAP.get(servicePath).getIP().contains(inetSocketAddress.toString());
+        if (SERVICE_ADDRESS_MAP.containsKey(inetSocketAddress.toString())) {
+            return SERVICE_ADDRESS_MAP.get(inetSocketAddress.toString()).getServicePath().contains(servicePath);
         }
         return false;
     }
@@ -197,11 +222,11 @@ public class EtcdUtils {
      * check if service address has been registered
      *
      * @param rpcRegisteredServiceInfo registered service information
-     * @param inetSocketAddress        service address ready to be registered
+     * @param servicePath              service fully qualified name with group and version
      * @return true if service address has been registered
      */
-    private static boolean checkIfHasBeenRegistered(RpcRegisteredServiceInfo rpcRegisteredServiceInfo, InetSocketAddress inetSocketAddress) {
-        return rpcRegisteredServiceInfo.getIP().contains(inetSocketAddress.toString());
+    private static boolean checkIfHasBeenRegistered(RpcRegisteredServiceInfo rpcRegisteredServiceInfo, String servicePath) {
+        return rpcRegisteredServiceInfo.getServicePath().contains(servicePath);
     }
 
     /**
@@ -211,6 +236,26 @@ public class EtcdUtils {
      * @return io.etcd.jetcd.ByteSequence
      */
     public static ByteSequence bytesOf(String val) {
-        return ByteSequence.from(val, UTF_8);
+        return ByteSequence.from(val, RpcCodecConstants.DEFAULT_CHARSET);
+    }
+
+    /**
+     * Service Path: /etcd-registry/me.hypocrite30.rpc.api.EchoService#Group1#Version1
+     *
+     * @param rpcServiceName e.g. me.hypocrite30.rpc.api.EchoService#g1#v1
+     * @return Service Path
+     */
+    public static String getServicePath(String rpcServiceName) {
+        return ETCD_REGISTRY_ROOT + "/" + rpcServiceName;
+    }
+
+    /**
+     * Rpc Service Name: me.hypocrite30.rpc.api.EchoService#Group1#Version1
+     *
+     * @param servicePath e.g. /etcd-registry/me.hypocrite30.rpc.api.EchoService#Group1#Version1
+     * @return Rpc Service Name
+     */
+    public static String getRpcServiceName(String servicePath) {
+        return servicePath.split("/")[2];
     }
 }

@@ -18,5 +18,5 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class RpcRegisteredServiceInfo {
-    private List<String> IP;
+    private List<String> servicePath;
 }

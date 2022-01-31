@@ -25,11 +25,11 @@ import java.lang.reflect.Field;
 public class SpringBeanPostProcessor implements BeanPostProcessor {
 
     private final ServiceProvider serviceProvider;
-    private final RequestTransporter rpcClient;
+    private RequestTransporter nettyRpcClient;
 
     public SpringBeanPostProcessor() {
         this.serviceProvider = SingletonFactory.getInstance(EtcdServiceProvider.class);
-        this.rpcClient = ExtensionLoader.getExtensionLoader(RequestTransporter.class).getExtension("netty");
+        this.nettyRpcClient = ExtensionLoader.getExtensionLoader(RequestTransporter.class).getExtension("netty");
     }
 
     /**
@@ -56,7 +56,7 @@ public class SpringBeanPostProcessor implements BeanPostProcessor {
     }
 
     /**
-     *
+     * replace the spring bean which with @RpcReference with the proxy object
      *
      * @param bean     service bean
      * @param beanName bean name
@@ -72,7 +72,7 @@ public class SpringBeanPostProcessor implements BeanPostProcessor {
                 RpcServiceConfig rpcServiceConfig = RpcServiceConfig.builder()
                         .group(rpcReference.group())
                         .version(rpcReference.version()).build();
-                RpcClientProxy rpcClientProxy = new RpcClientProxy(rpcClient, rpcServiceConfig);
+                RpcClientProxy rpcClientProxy = new RpcClientProxy(nettyRpcClient, rpcServiceConfig);
                 Object clientProxy = rpcClientProxy.getProxy(declaredField.getType());
                 declaredField.setAccessible(true);
                 try {

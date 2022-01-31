@@ -18,4 +18,4 @@
 
 - [x] Bean To Json 解决 etcd k-v 一对一映射问题 based on Gson
 
-- [ ] Reverse store structure from [ServiceName, HostList] to [Host, ServiceName]
+- [x] update Etcd storage structure from **[ServiceName, HostList]** to **[Host, ServicesList]**

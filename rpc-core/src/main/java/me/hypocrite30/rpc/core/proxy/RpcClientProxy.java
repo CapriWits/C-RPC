@@ -5,6 +5,7 @@ import me.hypocrite30.rpc.common.enums.RpcErrorEnum;
 import me.hypocrite30.rpc.common.enums.RpcResponseCodeEnum;
 import me.hypocrite30.rpc.common.exception.RpcException;
 import me.hypocrite30.rpc.core.config.RpcServiceConfig;
+import me.hypocrite30.rpc.core.registry.etcd.EtcdScheduledUpdater;
 import me.hypocrite30.rpc.core.remote.dto.RpcRequest;
 import me.hypocrite30.rpc.core.remote.dto.RpcResponse;
 import me.hypocrite30.rpc.core.remote.transport.RequestTransporter;
@@ -30,10 +31,14 @@ public class RpcClientProxy implements InvocationHandler {
 
     private final RequestTransporter requestTransporter;
     private final RpcServiceConfig rpcServiceConfig;
+    private final EtcdScheduledUpdater etcdScheduledUpdater;
 
     public RpcClientProxy(RequestTransporter requestTransporter, RpcServiceConfig rpcServiceConfig) {
         this.requestTransporter = requestTransporter;
         this.rpcServiceConfig = rpcServiceConfig;
+        etcdScheduledUpdater = new EtcdScheduledUpdater();
+        etcdScheduledUpdater.run();
+        etcdScheduledUpdater.start(0, 30);
     }
 
     public <T> T getProxy(Class<T> clazz) {
@@ -50,7 +55,7 @@ public class RpcClientProxy implements InvocationHandler {
      */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws ExecutionException, InterruptedException {
-        log.info("Method [" + method.getName() + "] has been invoked");
+        log.info("Method [{}] has been invoked", method.getName());
         RpcRequest rpcRequest = RpcRequest.builder()
                 .methodName(method.getName())
                 .parameters(args)

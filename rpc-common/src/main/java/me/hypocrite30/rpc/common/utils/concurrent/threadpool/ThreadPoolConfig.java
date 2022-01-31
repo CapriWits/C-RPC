@@ -8,7 +8,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @Description: 创建线程池配置类
  * @Author: Hypocrite30
  * @Date: 2021/11/17 22:38
  */
@@ -16,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Setter
 public class ThreadPoolConfig {
     /**
-     * ThreadPoolExecutor 线程池默认参数
+     * ThreadPoolExecutor default config
      */
     private static final int DEFAULT_CORE_POOL_SIZE = 10;
     private static final int DEFAULT_MAXIMUM_POOL_SIZE = 100;
@@ -26,7 +25,8 @@ public class ThreadPoolConfig {
     private static final int BLOCKING_QUEUE_CAPACITY = 100;
 
     /**
-     * 可配置参数，不配置则使用默认值
+     * Configurable parameters
+     * Using default value if it is not modified manually
      */
     private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
     private int maximumPoolSize = DEFAULT_MAXIMUM_POOL_SIZE;
@@ -34,7 +34,7 @@ public class ThreadPoolConfig {
     private TimeUnit unit = DEFAULT_TIME_UNIT;
 
     /**
-     * 有界队列
+     * Blocking queue
      */
     private BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<>(BLOCKING_QUEUE_CAPACITY);
 }

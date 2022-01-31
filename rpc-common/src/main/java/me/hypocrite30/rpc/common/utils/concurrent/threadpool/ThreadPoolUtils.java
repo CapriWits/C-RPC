@@ -14,10 +14,10 @@ import java.util.concurrent.*;
 public class ThreadPoolUtils {
 
     /**
-     * 给线程池命名前缀，区分线程池
+     * Name the thread pool with a prefix to distinguish the thread pool
      *
-     * @Key: ThreadNamePrefix
-     * @Value: ThreadPool
+     * @key: Thread name prefix
+     * @value: ThreadPool
      */
     private static final Map<String, ExecutorService> POOLS = new ConcurrentHashMap<>();
 
@@ -25,20 +25,20 @@ public class ThreadPoolUtils {
     }
 
     public static ExecutorService createThreadPoolIfAbsent(String threadNamePrefix) {
-        return createThreadPoolIfAbsent(new ThreadPoolConfig(), threadNamePrefix, false);
+        return createThreadPoolIfAbsent(new ThreadPoolConfig(), threadNamePrefix, true);
     }
 
     /**
-     * 命名前缀对应线程池若存在，直接返回。否则创建新的映射关系记录，并返回新线程池
+     * create not repeating thread pool
      *
-     * @param threadPoolConfig 线程池配置类
-     * @param threadNamePrefix 线程池命名前缀
-     * @param daemon           是否为守护线程
+     * @param threadPoolConfig thread pool config
+     * @param threadNamePrefix thread name prefix
+     * @param daemon           is daemon thread
      * @return ExecutorService
      */
     public static ExecutorService createThreadPoolIfAbsent(ThreadPoolConfig threadPoolConfig, String threadNamePrefix, Boolean daemon) {
         ExecutorService threadPool = POOLS.computeIfAbsent(threadNamePrefix, k -> createThreadPool(threadPoolConfig, threadNamePrefix, daemon));
-        // 被 shutdown | terminate，则手动创建
+        // manually create thread pool if it is shutdown or terminal
         if (threadPool.isShutdown() || threadPool.isTerminated()) {
             POOLS.remove(threadNamePrefix);
             threadPool = createThreadPool(threadPoolConfig, threadNamePrefix, daemon);
@@ -59,15 +59,30 @@ public class ThreadPoolUtils {
     }
 
     /**
-     * 如果有自定义命名线程前缀，自定义创建 ThreadFactory，否则使用 defaultThreadFactory
+     * create scheduled thread pool to finish scheduled task
      *
-     * @param threadNamePrefix 线程命名前缀，用于区分线程
-     * @param daemon           是否为守护线程
+     * @param threadNamePrefix thread name prefix
+     * @param daemon           is daemon thread
+     * @return Scheduled thread pool
+     */
+    public static ScheduledExecutorService createScheduledThreadPool(String threadNamePrefix, Boolean daemon) {
+        ScheduledExecutorService scheduledExecutorService = (ScheduledExecutorService) POOLS.computeIfAbsent(threadNamePrefix, k -> {
+            ThreadFactory threadFactory = createThreadFactory(threadNamePrefix, daemon);
+            return Executors.newSingleThreadScheduledExecutor(threadFactory);
+        });
+        return scheduledExecutorService;
+    }
+
+    /**
+     * Create a custom thread factory with thread name prefix and daemon thread
+     *
+     * @param threadNamePrefix thread name prefix
+     * @param daemon           is daemon thread
      * @return ThreadFactory
      */
     public static ThreadFactory createThreadFactory(String threadNamePrefix, Boolean daemon) {
         if (threadNamePrefix != null) {
-            if (daemon != null) { // daemon 要判空，用包装类型
+            if (daemon != null) {
                 // com.google.common.util.concurrent.ThreadFactoryBuilder
                 return new ThreadFactoryBuilder().setNameFormat(threadNamePrefix + "-%d").setDaemon(daemon).build();
             } else {
@@ -78,7 +93,7 @@ public class ThreadPoolUtils {
     }
 
     /**
-     * shutDown 所有线程池
+     * shutdown all thread pool
      */
     public static void shutDownAllThreadPool() {
         log.info("call shutDownAllThreadPool method");

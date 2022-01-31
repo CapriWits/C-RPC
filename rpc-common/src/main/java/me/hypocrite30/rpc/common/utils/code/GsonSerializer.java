@@ -34,11 +34,7 @@ public class GsonSerializer {
     }
 
     public static boolean isJsonFormat(String json) {
-        try {
-            JsonElement jsonElement = new JsonParser().parse(json);
-            return jsonElement != null && jsonElement.isJsonObject();
-        } catch (JsonSyntaxException e) {
-            throw new JsonSyntaxException("The string is not Json format", e);
-        }
+        JsonElement jsonElement = new JsonParser().parse(json);
+        return jsonElement != null && jsonElement.isJsonObject();
     }
 }
