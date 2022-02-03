@@ -49,7 +49,7 @@ public class NettyRpcClient implements RequestTransporter {
         bootstrap.group(eventLoopGroup)
                 .channel(NioSocketChannel.class)
                 .handler(new LoggingHandler(LogLevel.INFO))
-                //  timeout period of the connection is 5s
+                // timeout period of the connection is 5s
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override

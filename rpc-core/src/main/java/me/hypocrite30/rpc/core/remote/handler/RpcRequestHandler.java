@@ -11,7 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Rpc server resquest handler
+ * Rpc server request handler
  *
  * @Author: Hypocrite30
  * @Date: 2022/1/16 23:28

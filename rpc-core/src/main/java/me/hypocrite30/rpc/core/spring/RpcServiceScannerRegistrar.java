@@ -39,7 +39,7 @@ public class RpcServiceScannerRegistrar implements ImportBeanDefinitionRegistrar
      */
     @Override
     public void registerBeanDefinitions(AnnotationMetadata annotationMetadata, BeanDefinitionRegistry beanDefinitionRegistry) {
-        // get all annotations's attributes and value, store as LinkedHashMap<String, Object>
+        // get all annotations' attributes and value, store as LinkedHashMap<String, Object>
         AnnotationAttributes rpcScanAnnotationAttributes = AnnotationAttributes.fromMap(annotationMetadata.getAnnotationAttributes(RpcScan.class.getName()));
         String[] rpcScanBasePackages = new String[0];
         if (rpcScanAnnotationAttributes != null) {
